@@ -22,5 +22,9 @@ class PartService {
   }
 }
 
+
 export default new PartService();
+
+console.log("API =", API_BASE_URL);
+
 
