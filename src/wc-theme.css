@@ -1,0 +1,120 @@
+/* wc-theme.css — Windchill 13 final tune */
+
+/* Colors */
+:root{
+  --wc-bg: #f4f6f8;
+  --wc-surface: #ffffff;
+  --wc-sidebar: #1f262b;      /* softer dark slate (less black) */
+  --wc-header-top: #0f1720;
+  --wc-header-bottom: #131922;
+  --wc-text: #0f1720;
+  --wc-muted: #97a0ab;
+  --wc-border: #e6eaef;
+  --wc-accent: #2b8cff;       /* blue accent */
+  --wc-hover: #e9f2ff;
+  --wc-shadow: rgba(2,6,23,0.08);
+}
+
+/* Reset & base */
+*{ box-sizing:border-box; }
+html,body,#root{ height:100%; }
+body{
+  margin:0;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background:var(--wc-bg);
+  color:var(--wc-text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  font-size:14px;
+  line-height:1.4;
+}
+
+/* App root */
+.wc-root{ display:flex; flex-direction:column; min-height:100vh; height:100vh; }
+
+/* Header */
+.wc-header{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:12px 20px;
+  background: linear-gradient(180deg,var(--wc-header-top),var(--wc-header-bottom));
+  color:#fff; box-shadow: 0 3px 8px var(--wc-shadow);
+  border-bottom: 1px solid rgba(255,255,255,0.02);
+  min-height:56px; z-index:60; border-radius: 0 0 6px 6px;
+}
+.wc-header-left{ display:flex; align-items:center; gap:12px; }
+.wc-logo{ font-weight:700; font-size:16px; color:#fff; }
+.wc-product-name{ color: rgba(255,255,255,0.86); font-size:13px; }
+.wc-header-right{ color: rgba(255,255,255,0.86); font-size:13px; display:flex; align-items:center; gap:8px; }
+
+/* Main layout */
+.wc-main{ display:flex; flex:1; min-height:0; overflow:hidden; }
+
+/* Sidebar */
+.wc-sidebar{
+  width:220px; background:var(--wc-sidebar); color: #bfc9d6;
+  padding:14px 8px; border-right:1px solid rgba(255,255,255,0.02);
+  flex-shrink:0;
+}
+.wc-sidebar .wc-brand{ padding:8px 16px; color:#fff; font-weight:700; margin-bottom:6px; }
+.wc-sidebar ul{ list-style:none; padding:0; margin:6px 0; }
+.wc-sidebar li{
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; margin:6px 8px; border-radius:8px;
+  cursor:pointer; color:#bfc9d6; transition: all .12s ease;
+}
+.wc-sidebar li:hover{ background: rgba(255,255,255,0.02); transform:translateY(-1px); color:#fff; }
+
+/* Active item: left accent + pill */
+.wc-sidebar li.active {
+  background: linear-gradient(90deg, rgba(43,140,255,0.06), rgba(255,255,255,0.01));
+  color: #fff;
+  font-weight:600;
+  border-left: 4px solid var(--wc-accent);
+  padding-left: 12px; /* keep content aligned despite left border */
+  box-shadow: inset 0 -6px 12px rgba(0,0,0,0.02);
+}
+
+/* Content */
+.wc-content{
+  flex:1; padding:22px 28px; overflow:auto;
+  background: linear-gradient(180deg,#fff,#fbfdff);
+  min-height:0;
+}
+
+/* Page header / actions */
+.wc-page-header{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.wc-page-title{ margin:0; font-size:22px; font-weight:700; color:var(--wc-text); }
+.wc-actions{ display:flex; gap:8px; align-items:center; }
+
+/* Buttons tweak (use bootstrap base) */
+.btn{ border-radius:8px; padding:8px 12px; font-size:13px; }
+.btn-outline-primary{ color:var(--wc-accent); border:1px solid rgba(15,98,254,0.14); background:transparent; }
+.btn-outline-primary:hover{ background: rgba(15,98,254,0.06); border-color:var(--wc-accent); }
+.btn-outline-secondary{ border:1px solid rgba(0,0,0,0.08); color:#4b5563; }
+
+/* Table card */
+.wc-table{ background:var(--wc-surface); border-radius:10px; padding:12px; box-shadow:0 4px 18px rgba(2,6,23,0.04); border:1px solid var(--wc-border); }
+.table{ width:100%; border-collapse:collapse; margin:0; }
+.table thead th{
+  background: linear-gradient(180deg,#f6f8fa,#f1f4f7);
+  padding:12px 16px; text-align:left;
+  font-weight:700; color:#27323a; font-size:13px; border-bottom:1px solid rgba(15,20,30,0.04);
+}
+.table tbody td{
+  padding:12px 16px; border-bottom:1px solid rgba(15,20,30,0.03); font-size:14px; color:#2b3842;
+}
+.table tbody tr:hover{ background: var(--wc-hover); }
+
+/* empty message */
+.wc-empty{ padding:40px; color:var(--wc-muted); text-align:center; }
+
+/* responsive */
+@media (max-width:900px){
+  .wc-sidebar{ width:64px; }
+  .wc-sidebar .wc-brand{ display:none; }
+  .wc-content{ padding:12px; }
+  .wc-page-title{ font-size:18px; }
+}
+
+/* Optional vertical label */
+.wc-vertical-title{ position:absolute; right:12px; top:90px; transform:rotate(90deg); opacity:0.12; font-weight:700; display:none; }

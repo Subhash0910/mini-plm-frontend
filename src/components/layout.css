@@ -1,0 +1,70 @@
+.wc-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Top header bar */
+.wc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #1f2933; /* dark slate */
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.wc-logo {
+  font-weight: 700;
+  margin-right: 12px;
+}
+
+.wc-product-name {
+  opacity: 0.85;
+}
+
+.wc-user {
+  opacity: 0.85;
+}
+
+/* Main area: sidebar + content */
+.wc-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Left navigation */
+.wc-sidebar {
+  width: 200px;
+  background-color: #1f2933;
+  color: #cbd2e1;
+  padding-top: 12px;
+}
+
+.wc-sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.wc-sidebar li {
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.wc-sidebar li.active,
+.wc-sidebar li:hover {
+  background-color: #111827;
+  color: #ffffff;
+}
+
+/* Content pane */
+.wc-content {
+  flex: 1;
+  padding: 16px 24px;
+  background-color: #ffffff;
+  overflow: auto;
+  box-shadow: inset 0 1px 0 #e5e7eb;
+}
