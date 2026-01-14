@@ -1,57 +1,49 @@
-import React, { useState } from 'react';
-import PartService from '../services/PartService';
-import './createPartPanel.css';
+import React, { useState } from "react";
+import PartService from "../services/PartService";
+import "./createPartPanel.css";
 
 function CreatePartPanel({ onClose, onCreated, existingPart }) {
-  const [partNumber, setPartNumber] = useState(existingPart ? existingPart.partNumber : '');
-  const [name, setName] = useState(existingPart ? existingPart.name : '');
-  const [version, setVersion] = useState(existingPart ? existingPart.version : 'A');
-  const [lifecycleState, setLifecycleState] = useState(existingPart ? existingPart.lifecycleState : 'Draft');
+  const isEdit = !!existingPart;
+
+  const [partNumber, setPartNumber] = useState(existingPart?.partNumber || "");
+  const [name, setName] = useState(existingPart?.name || "");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-const handleSubmit = (e) => {
-  e.preventDefault();
-  setSaving(true);
-  setError('');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
 
-  const part = { partNumber, name, version, lifecycleState };
+    // Windchill-aligned: user sets identity + name only.
+    // revisionSequence and lifecycleState are controlled by backend.
+    const part = { partNumber, name };
 
-  const request = isEdit
-    ? PartService.updatePart(existingPart.id, part)
-    : PartService.createPart(part);
-
-  request
-    .then(() => {
-      setSaving(false);
+    try {
+      if (isEdit) {
+        await PartService.updatePart(existingPart.id, part);
+      } else {
+        await PartService.createPart(part);
+      }
       onCreated && onCreated();
-    })
-    .catch(() => {
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        err?.message ||
+        "Request failed";
+      setError(String(msg));
+    } finally {
       setSaving(false);
-      alert(isEdit
-        ? 'updated existing part.'
-        : 'created new part.'
-      );
-      setError(isEdit
-        ? 'Failed to update part. Please try again.'
-        : 'Failed to create part. Please try again.'
-      );
-    });
-};
-const isEdit = !!existingPart;
-
-
+    }
+  };
 
   return (
     <div className="wc-panel-backdrop">
       <div className="wc-panel">
         <div className="wc-panel-header">
-          <h3>Create Part</h3>
-          <button
-            type="button"
-            className="btn-close"
-            onClick={onClose}
-          />
+          <h3>{isEdit ? "Edit Part" : "Create Part"}</h3>
+          <button type="button" className="btn-close" onClick={onClose} />
         </div>
 
         <form onSubmit={handleSubmit} className="wc-panel-body">
@@ -65,7 +57,13 @@ const isEdit = !!existingPart;
               value={partNumber}
               onChange={(e) => setPartNumber(e.target.value)}
               required
+              disabled={isEdit}
             />
+            {isEdit && (
+              <div className="form-text">
+                Part number should not change after creation.
+              </div>
+            )}
           </div>
 
           <div className="mb-3">
@@ -80,27 +78,29 @@ const isEdit = !!existingPart;
           </div>
 
           <div className="mb-3">
-            <label className="form-label">Version</label>
+            <label className="form-label">Revision</label>
             <input
               type="text"
               className="form-control"
-              value={version}
-              onChange={(e) => setVersion(e.target.value)}
+              value={existingPart?.revisionSequence || "1.0"}
+              disabled
             />
+            <div className="form-text">
+              Revision is controlled by <b>Revise</b>.
+            </div>
           </div>
 
           <div className="mb-3">
             <label className="form-label">Lifecycle State</label>
-            <select
-              className="form-select"
-              value={lifecycleState}
-              onChange={(e) => setLifecycleState(e.target.value)}
-            >
-              <option>Draft</option>
-              <option>In Review</option>
-              <option>Released</option>
-              <option>Obsolete</option>
-            </select>
+            <input
+              type="text"
+              className="form-control"
+              value={existingPart?.lifecycleState || "IN_WORK"}
+              disabled
+            />
+            <div className="form-text">
+              Lifecycle is controlled by <b>Promote</b>.
+            </div>
           </div>
 
           <div className="wc-panel-footer">
@@ -108,15 +108,12 @@ const isEdit = !!existingPart;
               type="button"
               className="btn btn-outline-secondary me-2"
               onClick={onClose}
+              disabled={saving}
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={saving}
-            >
-              {saving ? 'Saving…' : 'OK'}
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? "Saving..." : "OK"}
             </button>
           </div>
         </form>

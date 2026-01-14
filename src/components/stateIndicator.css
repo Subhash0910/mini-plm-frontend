@@ -1,0 +1,9 @@
+.state-indicator {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 16px;
+  color: white;
+  font-weight: 500;
+  font-size: 12px;
+  white-space: nowrap;
+}

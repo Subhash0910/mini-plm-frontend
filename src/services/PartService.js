@@ -1,30 +1,76 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://mini-plm-backend.onrender.com/api/parts";
+const api = axios.create({
+  baseURL: "http://localhost:8080/api",
+  headers: { "Content-Type": "application/json" },
+});
 
+const PartService = {
+  // -----------------------
+  // READ
+  // -----------------------
+  getAllParts: (lifecycleState = "") => {
+    // GET /api/parts?lifecycleState=IN_WORK
+    return api.get("/parts", {
+      params: lifecycleState ? { lifecycleState } : {},
+    });
+  },
 
-class PartService {
+  getPartById: (id) => {
+    // OPTIONAL (recommended): GET /api/parts/{id}
+    // If you don't have backend endpoint yet, either add it or remove this method.
+    return api.get(`/parts/${id}`);
+  },
 
-  getAllParts() {
-    return axios.get(API_BASE_URL);
-  }
+  getPartHistory: (id) => {
+    // GET /api/parts/{id}/history
+    return api.get(`/parts/${id}/history`);
+  },
 
-  createPart(part) {
-    return axios.post(API_BASE_URL, part);
-  }
+  // -----------------------
+  // CREATE / UPDATE
+  // -----------------------
+  createPart: (part) => {
+    // POST /api/parts
+    return api.post("/parts", part);
+  },
 
-  updatePart(id, part) {
-    return axios.put(`${API_BASE_URL}/${id}`, part);
-  }
+  updatePart: (id, part) => {
+    // PUT /api/parts/{id}
+    return api.put(`/parts/${id}`, part);
+  },
 
-  deletePart(id) {
-    return axios.delete(`${API_BASE_URL}/${id}`);
-  }
-}
+  // -----------------------
+  // LIFECYCLE ACTIONS
+  // -----------------------
+  promotePart: (id, transitionedBy = "system") => {
+    // POST /api/parts/{id}/promote?transitionedBy=sam
+    return api.post(`/parts/${id}/promote`, null, {
+      params: { transitionedBy },
+    });
+  },
 
+  revisePart: (id, transitionedBy = "system") => {
+    // POST /api/parts/{id}/revise?transitionedBy=sam
+    return api.post(`/parts/${id}/revise`, null, {
+      params: { transitionedBy },
+    });
+  },
 
-export default new PartService();
+  obsoletePart: (id, transitionedBy = "system") => {
+    // POST /api/parts/{id}/obsolete?transitionedBy=sam
+    return api.post(`/parts/${id}/obsolete`, null, {
+      params: { transitionedBy },
+    });
+  },
 
-console.log("API =", API_BASE_URL);
+  // -----------------------
+  // DELETE
+  // -----------------------
+  deletePart: (id) => {
+    // DELETE /api/parts/{id}
+    return api.delete(`/parts/${id}`);
+  },
+};
 
-
+export default PartService;
