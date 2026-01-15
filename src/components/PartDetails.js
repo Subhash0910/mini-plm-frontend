@@ -14,29 +14,29 @@ function PartDetails() {
   const [activeTab, setActiveTab] = useState("details");
 
   useEffect(() => {
-    loadPart();
+    const loadPart = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await PartService.getPartById(id);
+        setPart(res.data);
+
+        const histRes = await PartService.getPartHistory(id);
+        setHistory(Array.isArray(histRes.data) ? histRes.data : []);
+      } catch (err) {
+        setError(
+          err?.response?.data?.message ||
+            err?.response?.data ||
+            err?.message ||
+            "Failed to load part"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) loadPart();
   }, [id]);
-
-  const loadPart = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await PartService.getPartById(id);
-      setPart(res.data);
-
-      const histRes = await PartService.getPartHistory(id);
-      setHistory(Array.isArray(histRes.data) ? histRes.data : []);
-    } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-          err?.response?.data ||
-          err?.message ||
-          "Failed to load part"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (loading) return <div className="plm-page-loading">Loading...</div>;
   if (error) return <div className="plm-page-error">{error}</div>;
@@ -44,40 +44,41 @@ function PartDetails() {
 
   return (
     <div className="plm-details-page">
-      {/* Header */}
       <div className="plm-details-header">
-        <button className="plm-btn-back" onClick={() => navigate("/")}>
+        <button className="plm-btn-back" onClick={() => navigate("/")}
+          type="button">
           ← Back
         </button>
         <div className="plm-details-title">
-          <h1>{part.partNumber}</h1>
+          <h1 className="plm-h1">{part.partNumber}</h1>
           <StateIndicator state={part.lifecycleState} />
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="plm-tabs">
         <button
           className={`plm-tab ${activeTab === "details" ? "active" : ""}`}
           onClick={() => setActiveTab("details")}
+          type="button"
         >
           Details
         </button>
         <button
           className={`plm-tab ${activeTab === "history" ? "active" : ""}`}
           onClick={() => setActiveTab("history")}
+          type="button"
         >
           History
         </button>
         <button
           className={`plm-tab ${activeTab === "structure" ? "active" : ""}`}
           onClick={() => setActiveTab("structure")}
+          type="button"
         >
           Structure (BOM)
         </button>
       </div>
 
-      {/* Tab Content */}
       <div className="plm-tab-content">
         {activeTab === "details" && (
           <div className="plm-details-form">
@@ -167,7 +168,9 @@ function PartDetails() {
                 {history.map((h, i) => (
                   <li key={i} className="plm-history-item">
                     <span className="plm-history-date">
-                      {new Date(h.transitionDate).toLocaleString()}
+                      {h?.transitionDate
+                        ? new Date(h.transitionDate).toLocaleString()
+                        : "—"}
                     </span>
                     <span className="plm-history-action">
                       {h.fromState} → {h.toState}
@@ -186,9 +189,7 @@ function PartDetails() {
         {activeTab === "structure" && (
           <div className="plm-structure-placeholder">
             <p>📦 BOM Structure (Coming Soon)</p>
-            <p>
-              Add/remove child parts and visualize the bill of materials here.
-            </p>
+            <p>Add/remove child parts and visualize the bill of materials here.</p>
           </div>
         )}
       </div>
