@@ -11,6 +11,8 @@ import LoginPage from "./components/LoginPage";
 import SignupPage from "./components/SignupPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminUsersPage from "./components/AdminUsersPage";
+import ChangesPage from "./components/ChangesPage";
+import ChangeDetailsPage from "./components/ChangeDetailsPage";
 
 import PartService from "./services/PartService";
 import { auth } from "./services/auth";
@@ -150,7 +152,7 @@ function App() {
             path="/parts/:id"
             element={
               <ProtectedRoute>
-                <PartDetails />
+                <PartDetails showToast={showToast} />
               </ProtectedRoute>
             }
           />
@@ -172,11 +174,21 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/changes"
             element={
               <ProtectedRoute>
-                <PlaceholderPage title="Changes" />
+                <ChangesPage showToast={showToast} />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/changes/:id"
+            element={
+              <ProtectedRoute>
+                <ChangeDetailsPage showToast={showToast} />
               </ProtectedRoute>
             }
           />

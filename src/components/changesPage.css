@@ -1,0 +1,81 @@
+.wc-changes-page {
+  padding: 16px;
+}
+
+.wc-changes-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.wc-changes-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.wc-changes-sub {
+  color: #6b7280;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.wc-changes-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.wc-changes-info {
+  padding: 10px 12px;
+}
+
+.wc-changes-error {
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #991b1b;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.wc-changes-table-wrap {
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.wc-changes-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.wc-changes-table th,
+.wc-changes-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.wc-changes-table thead th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.wc-changes-empty {
+  padding: 16px;
+  color: #6b7280;
+}
+
+.wc-changes-link {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.wc-changes-link:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,92 @@
+.wc-bom-tab {
+  padding: 12px 0;
+}
+
+.wc-bom-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.wc-bom-title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.wc-bom-sub {
+  color: #6b7280;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.wc-bom-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wc-bom-info {
+  padding: 10px 12px;
+}
+
+.wc-bom-error {
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #991b1b;
+  border-radius: 8px;
+}
+
+.wc-bom-empty {
+  padding: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #6b7280;
+}
+
+.wc-bom-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.wc-bom-pill {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.wc-bom-table-wrap {
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.wc-bom-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.wc-bom-table th,
+.wc-bom-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.wc-bom-table thead th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.wc-bom-empty-row {
+  padding: 16px;
+  color: #6b7280;
+}
