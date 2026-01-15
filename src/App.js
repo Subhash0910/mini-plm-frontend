@@ -10,8 +10,10 @@ import PartDetails from "./components/PartDetails";
 import LoginPage from "./components/LoginPage";
 import SignupPage from "./components/SignupPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminUsersPage from "./components/AdminUsersPage";
 
 import PartService from "./services/PartService";
+import { auth } from "./services/auth";
 
 function HomePage({
   showCreate,
@@ -22,7 +24,18 @@ function HomePage({
   setReloadFlag,
   showToast,
 }) {
+  const user = auth.getUser();
+  const role = user?.role;
+
+  const canCreate = role === "ADMIN" || role === "ENGINEER";
+  const canEdit = role === "ADMIN" || role === "ENGINEER";
+  const canDelete = role === "ADMIN";
+
   const handleEditPart = (part) => {
+    if (!canEdit) {
+      showToast("Read-only: only ENGINEER/ADMIN can edit parts", "info");
+      return;
+    }
     setEditingPart(part);
     setShowCreate(true);
   };
@@ -35,6 +48,11 @@ function HomePage({
   };
 
   const handleDeletePart = (id) => {
+    if (!canDelete) {
+      showToast("Only ADMIN can delete parts", "info");
+      return;
+    }
+
     if (!window.confirm("Delete this part?")) return;
 
     PartService.deletePart(id)
@@ -53,7 +71,13 @@ function HomePage({
   return (
     <>
       <PartList
-        onCreateClick={() => setShowCreate(true)}
+        onCreateClick={() => {
+          if (!canCreate) {
+            showToast("Read-only: only ENGINEER/ADMIN can create parts", "info");
+            return;
+          }
+          setShowCreate(true);
+        }}
         onEditClick={handleEditPart}
         onDeleteClick={handleDeletePart}
         reloadFlag={reloadFlag}
@@ -127,6 +151,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <PartDetails />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute requiredRoles={["ADMIN"]}>
+                <AdminUsersPage showToast={showToast} />
               </ProtectedRoute>
             }
           />

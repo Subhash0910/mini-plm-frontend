@@ -1,0 +1,75 @@
+.wc-admin-page {
+  padding: 16px;
+}
+
+.wc-admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.wc-admin-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.wc-admin-subtitle {
+  margin: 0 0 14px;
+  color: #6b7280;
+}
+
+.wc-admin-info {
+  padding: 10px 12px;
+}
+
+.wc-admin-error {
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #991b1b;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.wc-admin-table-wrap {
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.wc-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.wc-admin-table th,
+.wc-admin-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.wc-admin-table thead th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.wc-admin-empty {
+  padding: 16px;
+  color: #6b7280;
+}
+
+.wc-admin-select {
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.wc-admin-hint {
+  margin-top: 12px;
+  color: #6b7280;
+}

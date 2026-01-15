@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { FaBoxes, FaFileAlt, FaExchangeAlt, FaUserCircle } from "react-icons/fa";
+import { FaBoxes, FaFileAlt, FaExchangeAlt, FaUserCircle, FaUserCog } from "react-icons/fa";
 import AuthService from "../services/AuthService";
 import { auth } from "../services/auth";
 
@@ -29,7 +29,8 @@ function Layout({ children }) {
           {loggedIn ? (
             <>
               <span style={{ marginRight: 12 }}>
-                User: {user?.username || "(unknown)"}{user?.role ? ` (${user.role})` : ""}
+                User: {user?.username || "(unknown)"}
+                {user?.role ? ` (${user.role})` : ""}
               </span>
               <button className="btn btn-sm btn-outline-light" onClick={onLogout}>
                 Logout
@@ -48,23 +49,69 @@ function Layout({ children }) {
           <div className="wc-brand">Mini PLM</div>
           <ul>
             <li>
-              <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}
-                style={{ display: "flex", alignItems: "center", gap: 8, color: "inherit", textDecoration: "none" }}>
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) => (isActive ? "active" : "")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  color: "inherit",
+                  textDecoration: "none",
+                }}
+              >
                 <FaBoxes style={{ minWidth: 18 }} /> <span>Parts</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to="/documents" className={({ isActive }) => (isActive ? "active" : "")}
-                style={{ display: "flex", alignItems: "center", gap: 8, color: "inherit", textDecoration: "none" }}>
+              <NavLink
+                to="/documents"
+                className={({ isActive }) => (isActive ? "active" : "")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  color: "inherit",
+                  textDecoration: "none",
+                }}
+              >
                 <FaFileAlt style={{ minWidth: 18 }} /> <span>Documents</span>
               </NavLink>
             </li>
             <li>
-              <NavLink to="/changes" className={({ isActive }) => (isActive ? "active" : "")}
-                style={{ display: "flex", alignItems: "center", gap: 8, color: "inherit", textDecoration: "none" }}>
+              <NavLink
+                to="/changes"
+                className={({ isActive }) => (isActive ? "active" : "")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  color: "inherit",
+                  textDecoration: "none",
+                }}
+              >
                 <FaExchangeAlt style={{ minWidth: 18 }} /> <span>Changes</span>
               </NavLink>
             </li>
+
+            {loggedIn && user?.role === "ADMIN" && (
+              <li>
+                <NavLink
+                  to="/admin/users"
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "inherit",
+                    textDecoration: "none",
+                  }}
+                >
+                  <FaUserCog style={{ minWidth: 18 }} /> <span>Administration</span>
+                </NavLink>
+              </li>
+            )}
           </ul>
         </nav>
 
