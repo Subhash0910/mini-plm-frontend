@@ -1,13 +1,15 @@
 import React, { useCallback, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Layout from "./components/Layout";
 import PartList from "./components/PartList";
 import CreatePartPanel from "./components/CreatePartPanel";
 import Toast from "./components/Toast";
+import PartDetails from "./components/PartDetails";
 
-// If you have/created PartDetails later, import it:
-// import PartDetails from "./components/PartDetails";
+import LoginPage from "./components/LoginPage";
+import SignupPage from "./components/SignupPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 import PartService from "./services/PartService";
 
@@ -20,8 +22,6 @@ function HomePage({
   setReloadFlag,
   showToast,
 }) {
-  const navigate = useNavigate();
-
   const handleEditPart = (part) => {
     setEditingPart(part);
     setShowCreate(true);
@@ -57,8 +57,6 @@ function HomePage({
         onEditClick={handleEditPart}
         onDeleteClick={handleDeletePart}
         reloadFlag={reloadFlag}
-        // If your PartList supports opening details:
-        // onOpen={(id) => navigate(`/parts/${id}`)}
       />
 
       {showCreate && (
@@ -72,6 +70,15 @@ function HomePage({
         />
       )}
     </>
+  );
+}
+
+function PlaceholderPage({ title }) {
+  return (
+    <div className="container">
+      <h3>{title}</h3>
+      <p className="text-muted">Coming soon.</p>
+    </div>
   );
 }
 
@@ -92,30 +99,54 @@ function App() {
   return (
     <BrowserRouter>
       <Layout>
-        <Toast
-          message={toastMessage}
-          type={toastType}
-          onClose={() => setToastMessage("")}
-        />
+        <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage("")} />
 
         <Routes>
+          <Route path="/login" element={<LoginPage showToast={showToast} />} />
+          <Route path="/signup" element={<SignupPage showToast={showToast} />} />
+
           <Route
             path="/"
             element={
-              <HomePage
-                showCreate={showCreate}
-                setShowCreate={setShowCreate}
-                editingPart={editingPart}
-                setEditingPart={setEditingPart}
-                reloadFlag={reloadFlag}
-                setReloadFlag={setReloadFlag}
-                showToast={showToast}
-              />
+              <ProtectedRoute>
+                <HomePage
+                  showCreate={showCreate}
+                  setShowCreate={setShowCreate}
+                  editingPart={editingPart}
+                  setEditingPart={setEditingPart}
+                  reloadFlag={reloadFlag}
+                  setReloadFlag={setReloadFlag}
+                  showToast={showToast}
+                />
+              </ProtectedRoute>
             }
           />
 
-          {/* Add later when you create PartDetails */}
-          {/* <Route path="/parts/:id" element={<PartDetails />} /> */}
+          <Route
+            path="/parts/:id"
+            element={
+              <ProtectedRoute>
+                <PartDetails />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <PlaceholderPage title="Documents" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/changes"
+            element={
+              <ProtectedRoute>
+                <PlaceholderPage title="Changes" />
+              </ProtectedRoute>
+            }
+          />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
