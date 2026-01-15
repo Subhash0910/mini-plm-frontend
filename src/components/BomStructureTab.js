@@ -43,20 +43,43 @@ function BomStructureTab({ partId, showToast }) {
 
     try {
       const res = await BomService.getActiveBomForPart(partId);
+      
+      if (!res || !res.data) {
+        setBom(null);
+        setFlattened([]);
+        return;
+      }
+      
       setBom(res.data);
 
       const bomId = res?.data?.id;
       if (bomId) {
-        const flat = await BomService.getFlattenedBom(bomId);
-        setFlattened(Array.isArray(flat.data) ? flat.data : []);
+        try {
+          const flat = await BomService.getFlattenedBom(bomId);
+          setFlattened(Array.isArray(flat.data) ? flat.data : []);
+        } catch (flatError) {
+          console.warn("Failed to load flattened BOM:", flatError);
+          setFlattened([]);
+        }
       }
     } catch (e) {
       const status = e?.response?.status;
+      const message = e?.response?.data?.message || 
+                     e?.response?.data || 
+                     e?.message || 
+                     "Failed to load BOM";
+      
       if (status === 404) {
+        // Not found - this is okay, just no BOM yet
         setBom(null);
         setFlattened([]);
+        setError("");
+      } else if (status === 500 || status === undefined) {
+        // Server error or network error
+        console.error("BOM load error:", e);
+        setError(`Server error: ${message}`);
       } else {
-        setError(e?.response?.data?.message || e?.response?.data || e?.message || "Failed to load BOM");
+        setError(String(message));
       }
     } finally {
       setLoading(false);
@@ -74,15 +97,36 @@ function BomStructureTab({ partId, showToast }) {
       return;
     }
 
-    if (bom?.id) {
-      await BomService.updateBom(bom.id, payload);
-      showToast?.("BOM updated", "success");
-    } else {
-      await BomService.createBom(payload);
-      showToast?.("BOM created", "success");
-    }
+    try {
+      // Validate payload
+      if (!payload || !payload.partId || !Array.isArray(payload.lines) || payload.lines.length === 0) {
+        showToast?.("BOM must have partId and at least one line item", "error");
+        return;
+      }
 
-    await load();
+      if (!payload.name || payload.name.trim() === "") {
+        showToast?.("BOM name is required", "error");
+        return;
+      }
+
+      if (bom?.id) {
+        await BomService.updateBom(bom.id, payload);
+        showToast?.("BOM updated successfully", "success");
+      } else {
+        await BomService.createBom(payload);
+        showToast?.("BOM created successfully", "success");
+      }
+
+      setShowEditor(false);
+      await load();
+    } catch (e) {
+      const message = e?.response?.data?.message || 
+                     e?.response?.data || 
+                     e?.message || 
+                     "Failed to save BOM";
+      showToast?.(String(message), "error");
+      console.error("BOM save error:", e);
+    }
   };
 
   return (
@@ -105,7 +149,7 @@ function BomStructureTab({ partId, showToast }) {
         </div>
       </div>
 
-      {loading && <div className="wc-bom-info">Loading…</div>}
+      {loading && <div className="wc-bom-info">Loading BOM structure…</div>}
       {error && <div className="wc-bom-error">{String(error)}</div>}
 
       {!loading && !error && !bom && (

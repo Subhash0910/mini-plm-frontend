@@ -14,9 +14,9 @@
   flex: 1;
 }
 
-.wc-changes-title {
+.wc-changes-header .wc-changes-title {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: #212529;
 }
@@ -57,11 +57,11 @@
 }
 
 .wc-changes-table th {
-  padding: 15px;
+  padding: 12px 15px;
   text-align: left;
   font-weight: 600;
   color: #495057;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -81,8 +81,9 @@
 }
 
 .wc-changes-table td {
-  padding: 15px;
+  padding: 12px 15px;
   color: #212529;
+  font-size: 0.95rem;
 }
 
 .wc-changes-id {
@@ -93,11 +94,13 @@
 .wc-changes-number {
   font-family: monospace;
   font-weight: 500;
+  font-size: 0.85rem;
 }
 
-.wc-changes-title {
+.wc-changes-table td.wc-changes-title-cell {
   font-weight: 500;
   color: #495057;
+  font-size: 0.95rem;
 }
 
 .wc-status-badge {
@@ -106,7 +109,7 @@
   border-radius: 16px;
   color: white;
   font-weight: 500;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
