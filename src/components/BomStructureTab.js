@@ -22,14 +22,27 @@ function BomStructureTab({ partId, showToast }) {
 
   const [showEditor, setShowEditor] = useState(false);
 
+  // Fixed: Use correct backend field names
+  // - parentPartId (not partId)
+  // - bomName (not name)
+  // - bomLines (not lines)
+  // - componentPartId (not childPartId)
+  // - lineNumber (required field)
   const editorTemplate = useMemo(() => {
     return {
-      partId: Number(partId),
-      name: `BOM-${partId}`,
-      lines: [
+      parentPartId: Number(partId),
+      bomName: `BOM-${partId}`,
+      bomVersion: "1.0",
+      description: "",
+      bomLines: [
         {
-          childPartId: 0,
+          componentPartId: 0,
+          lineNumber: 1,
           quantity: 1,
+          unitOfMeasure: "EA",
+          referenceDesignator: "",
+          notes: "",
+          sequenceNumber: 1,
         },
       ],
     };
@@ -98,15 +111,32 @@ function BomStructureTab({ partId, showToast }) {
     }
 
     try {
-      // Validate payload
-      if (!payload || !payload.partId || !Array.isArray(payload.lines) || payload.lines.length === 0) {
-        showToast?.("BOM must have partId and at least one line item", "error");
+      // Validate payload structure
+      if (!payload || !payload.parentPartId || !Array.isArray(payload.bomLines) || payload.bomLines.length === 0) {
+        showToast?.("BOM must have parentPartId and at least one line item", "error");
         return;
       }
 
-      if (!payload.name || payload.name.trim() === "") {
+      if (!payload.bomName || payload.bomName.trim() === "") {
         showToast?.("BOM name is required", "error");
         return;
+      }
+
+      // Validate each BOM line
+      for (let i = 0; i < payload.bomLines.length; i++) {
+        const line = payload.bomLines[i];
+        if (!line.componentPartId || line.componentPartId === 0) {
+          showToast?.(`BOM line ${i + 1} must have a valid componentPartId", "error");
+          return;
+        }
+        if (!line.lineNumber) {
+          showToast?.(`BOM line ${i + 1} must have a lineNumber", "error");
+          return;
+        }
+        if (!line.quantity || line.quantity <= 0) {
+          showToast?.(`BOM line ${i + 1} must have a valid quantity", "error");
+          return;
+        }
       }
 
       if (bom?.id) {
@@ -162,7 +192,7 @@ function BomStructureTab({ partId, showToast }) {
       {bom && (
         <div className="wc-bom-meta">
           <div className="wc-bom-pill">BOM ID: {bom.id}</div>
-          {bom?.name && <div className="wc-bom-pill">Name: {bom.name}</div>}
+          {bom?.bomName && <div className="wc-bom-pill">Name: {bom.bomName}</div>}
           {bom?.isActive !== undefined && <div className="wc-bom-pill">Active: {String(bom.isActive)}</div>}
         </div>
       )}
@@ -190,7 +220,7 @@ function BomStructureTab({ partId, showToast }) {
                   <tr key={idx}>
                     <td>{safeString(line.level ?? line.depth ?? "")}</td>
                     <td>{safeString(line.parentPartNumber ?? line.parent ?? line.parentNumber ?? "")}</td>
-                    <td>{safeString(line.childPartNumber ?? line.child ?? line.childNumber ?? "")}</td>
+                    <td>{safeString(line.componentPartNumber ?? line.child ?? line.childNumber ?? "")}</td>
                     <td>{safeString(line.quantity ?? line.qty ?? "")}</td>
                   </tr>
                 ))
