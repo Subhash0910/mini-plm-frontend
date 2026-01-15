@@ -1,13 +1,20 @@
 import apiClient from "./apiClient";
 
+const DEFAULT_PAGE_SIZE = 200;
+
 const PartService = {
   // -----------------------
   // READ
   // -----------------------
-  getAllParts: (lifecycleState = "") => {
-    // GET /api/parts?lifecycleState=IN_WORK
+  getAllParts: (lifecycleState = "", page = 0, size = DEFAULT_PAGE_SIZE) => {
+    // Backend returns a Spring Data Page<PartResponse>
+    // GET /api/parts?lifecycleState=IN_WORK&page=0&size=200
     return apiClient.get("/parts", {
-      params: lifecycleState ? { lifecycleState } : {},
+      params: {
+        ...(lifecycleState ? { lifecycleState } : {}),
+        page,
+        size,
+      },
     });
   },
 

@@ -12,6 +12,13 @@ function parseRevisionNumber(seq) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function extractPartsList(data) {
+  // Backend returns Page<PartResponse> for GET /parts
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.content)) return data.content;
+  return [];
+}
+
 function PartList({ onCreateClick, onEditClick, onDeleteClick, reloadFlag }) {
   const [parts, setParts] = useState([]);
   const [selectedState, setSelectedState] = useState("");
@@ -31,7 +38,7 @@ function PartList({ onCreateClick, onEditClick, onDeleteClick, reloadFlag }) {
     setActionError("");
     try {
       const res = await PartService.getAllParts(state);
-      setParts(Array.isArray(res.data) ? res.data : []);
+      setParts(extractPartsList(res.data));
     } catch (err) {
       setParts([]);
       setActionError(
@@ -95,7 +102,7 @@ function PartList({ onCreateClick, onEditClick, onDeleteClick, reloadFlag }) {
     let top = event.clientY + 8;
 
     left = Math.max(padding, Math.min(left, window.innerWidth - menuWidth - padding));
-    top = Math.max(padding , Math.min(top, window.innerHeight - menuHeight - padding));
+    top = Math.max(padding, Math.min(top, window.innerHeight - menuHeight - padding));
 
     setPopoverPosition({ top, left });
     setActivePart(part);
