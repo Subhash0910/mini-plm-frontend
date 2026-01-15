@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PartService from "../services/PartService";
 import StateIndicator from "./StateIndicator";
+import BomStructureTab from "./BomStructureTab";
 import "./partDetails.css";
 
-function PartDetails() {
+function PartDetails({ showToast }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [part, setPart] = useState(null);
@@ -45,8 +46,7 @@ function PartDetails() {
   return (
     <div className="plm-details-page">
       <div className="plm-details-header">
-        <button className="plm-btn-back" onClick={() => navigate("/")}
-          type="button">
+        <button className="plm-btn-back" onClick={() => navigate("/")} type="button">
           ← Back
         </button>
         <div className="plm-details-title">
@@ -186,12 +186,7 @@ function PartDetails() {
           </div>
         )}
 
-        {activeTab === "structure" && (
-          <div className="plm-structure-placeholder">
-            <p>📦 BOM Structure (Coming Soon)</p>
-            <p>Add/remove child parts and visualize the bill of materials here.</p>
-          </div>
-        )}
+        {activeTab === "structure" && <BomStructureTab partId={id} showToast={showToast} />}
       </div>
     </div>
   );

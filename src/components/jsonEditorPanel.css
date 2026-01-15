@@ -1,0 +1,53 @@
+.wc-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 999;
+}
+
+.wc-panel {
+  width: 100%;
+  max-width: 880px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.wc-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.wc-panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.wc-panel-body {
+  padding: 12px 14px;
+}
+
+.wc-panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.wc-json-panel {
+  max-width: 860px;
+}
+
+.wc-json-textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}

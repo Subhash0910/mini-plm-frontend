@@ -1,0 +1,47 @@
+.wc-change-details-page {
+  padding: 16px;
+}
+
+.wc-change-details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.wc-change-details-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wc-change-info {
+  padding: 10px 12px;
+}
+
+.wc-change-error {
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #991b1b;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.wc-change-title {
+  margin: 8px 0 12px;
+  font-size: 20px;
+}
+
+.wc-change-json {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  overflow: auto;
+}
+
+.wc-change-json pre {
+  margin: 0;
+  padding: 12px;
+  font-size: 12px;
+}
