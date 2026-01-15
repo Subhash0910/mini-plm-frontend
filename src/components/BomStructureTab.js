@@ -57,9 +57,12 @@ function BomStructureTab({ partId, showToast }) {
     try {
       const res = await BomService.getActiveBomForPart(partId);
       
+      // FIX: Handle both null response and empty data gracefully
+      // When backend returns 200 with null data, it means "no BOM found"
       if (!res || !res.data) {
         setBom(null);
         setFlattened([]);
+        setError("");  // FIX: Don't show error, just show empty state
         return;
       }
       
@@ -82,17 +85,19 @@ function BomStructureTab({ partId, showToast }) {
                      e?.message || 
                      "Failed to load BOM";
       
-      if (status === 404) {
+      console.error("BOM load error:", e);
+      
+      // FIX: Don't treat "no active BOM" as an error
+      // The backend now returns null instead of 500, but if we still get 404 or similar,
+      // treat it as "no BOM created yet"
+      if (status === 404 || message.includes("No active BOM")) {
         // Not found - this is okay, just no BOM yet
         setBom(null);
         setFlattened([]);
         setError("");
-      } else if (status === 500 || status === undefined) {
-        // Server error or network error
-        console.error("BOM load error:", e);
-        setError(`Server error: ${message}`);
       } else {
-        setError(String(message));
+        // Real error
+        setError(`Error: ${message}`);
       }
     } finally {
       setLoading(false);
@@ -185,7 +190,7 @@ function BomStructureTab({ partId, showToast }) {
       {!loading && !error && !bom && (
         <div className="wc-bom-empty">
           No active BOM found for this part.
-          {canWrite ? " Create one to start building structure." : ""}
+          {canWrite ? " Click 'Create BOM' to start building the structure." : ""}
         </div>
       )}
 
