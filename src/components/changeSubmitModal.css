@@ -1,0 +1,24 @@
+.wc-submit-modal {
+  width: 90%;
+  max-width: 600px;
+}
+
+.wc-approvers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wc-approver-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.wc-approver-row .form-control {
+  flex: 1;
+}
+
+.wc-approver-row .btn {
+  white-space: nowrap;
+}

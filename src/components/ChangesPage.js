@@ -1,18 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ChangeService from "../services/ChangeService";
 import { auth } from "../services/auth";
-import JsonEditorPanel from "./JsonEditorPanel";
+import ChangeCreateModal from "./ChangeCreateModal";
 import "./changesPage.css";
 
-const STATUSES = [
-  "DRAFT",
-  "SUBMITTED",
-  "UNDER_REVIEW",
-  "APPROVED",
-  "REJECTED",
-  "IMPLEMENTED",
-];
+const STATUS_COLORS = {
+  DRAFT: "#6c757d",
+  PENDING_APPROVAL: "#ffc107",
+  APPROVED: "#28a745",
+  REJECTED: "#dc3545",
+  IMPLEMENTED: "#007bff",
+};
 
 function getField(obj, keys, fallback = "") {
   for (const k of keys) {
@@ -22,6 +21,7 @@ function getField(obj, keys, fallback = "") {
 }
 
 function ChangesPage({ showToast }) {
+  const navigate = useNavigate();
   const user = auth.getUser();
   const role = user?.role;
 
@@ -34,17 +34,6 @@ function ChangesPage({ showToast }) {
   const [changes, setChanges] = useState([]);
 
   const [showCreate, setShowCreate] = useState(false);
-
-  const createTemplate = useMemo(() => {
-    return {
-      changeNumber: "CHG-0001",
-      title: "Change title",
-      description: "Why this change is needed",
-      changeType: "ECR",
-      priority: "MEDIUM",
-      affectedPartIds: [],
-    };
-  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -74,9 +63,23 @@ function ChangesPage({ showToast }) {
       return;
     }
 
-    await ChangeService.createChange(payload);
-    showToast?.("Change created", "success");
-    await load();
+    try {
+      await ChangeService.createChange(payload);
+      showToast?.("Change created successfully", "success");
+      setShowCreate(false);
+      await load();
+    } catch (err) {
+      showToast?.(err?.response?.data?.message || "Failed to create change", "error");
+    }
+  };
+
+  const handleRowClick = (changeId) => {
+    navigate(`/changes/${changeId}`);
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    return new Date(dateStr).toLocaleDateString();
   };
 
   return (
@@ -84,7 +87,7 @@ function ChangesPage({ showToast }) {
       <div className="wc-changes-header">
         <div>
           <h2 className="wc-changes-title">Changes</h2>
-          <div className="wc-changes-sub">Windchill-like change objects with lifecycle actions.</div>
+          <p className="wc-changes-sub">Engineering change requests with approval workflows.</p>
         </div>
 
         <div className="wc-changes-actions">
@@ -95,11 +98,11 @@ function ChangesPage({ showToast }) {
             style={{ minWidth: 190 }}
           >
             <option value="">All statuses</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
+            <option value="DRAFT">Draft</option>
+            <option value="PENDING_APPROVAL">Pending Approval</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="IMPLEMENTED">Implemented</option>
           </select>
 
           <button className="btn btn-sm btn-outline-secondary" onClick={load} disabled={loading}>
@@ -126,12 +129,14 @@ function ChangesPage({ showToast }) {
               <th>Title</th>
               <th>Status</th>
               <th>Type</th>
+              <th>Priority</th>
+              <th>Created</th>
             </tr>
           </thead>
           <tbody>
             {changes.length === 0 && !loading ? (
               <tr>
-                <td colSpan={5} className="wc-changes-empty">
+                <td colSpan={7} className="wc-changes-empty">
                   No changes found.
                 </td>
               </tr>
@@ -142,22 +147,25 @@ function ChangesPage({ showToast }) {
                 const title = getField(c, ["title", "name"], "—");
                 const status = getField(c, ["status"], "—");
                 const type = getField(c, ["changeType", "type"], "—");
+                const priority = getField(c, ["priority"], "—");
+                const created = formatDate(getField(c, ["createdAt", "createdDate"]));
 
                 return (
-                  <tr key={id || number}>
+                  <tr key={id || number} className="wc-changes-row" onClick={() => handleRowClick(id)}>
+                    <td className="wc-changes-id">{id || "—"}</td>
+                    <td className="wc-changes-number">{String(number)}</td>
+                    <td className="wc-changes-title">{String(title)}</td>
                     <td>
-                      {id ? (
-                        <Link className="wc-changes-link" to={`/changes/${id}`}>
-                          {id}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
+                      <span
+                        className="wc-status-badge"
+                        style={{ backgroundColor: STATUS_COLORS[status] || "#6c757d" }}
+                      >
+                        {String(status)}
+                      </span>
                     </td>
-                    <td>{String(number)}</td>
-                    <td>{String(title)}</td>
-                    <td>{String(status)}</td>
                     <td>{String(type)}</td>
+                    <td>{String(priority)}</td>
+                    <td>{created}</td>
                   </tr>
                 );
               })
@@ -167,13 +175,7 @@ function ChangesPage({ showToast }) {
       </div>
 
       {showCreate && (
-        <JsonEditorPanel
-          title="Create Change (JSON)"
-          initialJson={createTemplate}
-          submitLabel="Create"
-          onSubmit={createChange}
-          onClose={() => setShowCreate(false)}
-        />
+        <ChangeCreateModal onSubmit={createChange} onClose={() => setShowCreate(false)} />
       )}
     </div>
   );

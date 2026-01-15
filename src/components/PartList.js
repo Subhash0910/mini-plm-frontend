@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PartService from "../services/PartService";
 import StateIndicator from "./StateIndicator";
 import "./partList.css";
@@ -20,6 +21,7 @@ function extractPartsList(data) {
 }
 
 function PartList({ onCreateClick, onEditClick, onDeleteClick, reloadFlag }) {
+  const navigate = useNavigate();
   const [parts, setParts] = useState([]);
   const [selectedState, setSelectedState] = useState("");
   const [loading, setLoading] = useState(false);
@@ -189,7 +191,8 @@ function PartList({ onCreateClick, onEditClick, onDeleteClick, reloadFlag }) {
       {actionError && (
         <div className="plm-alert plm-alert-danger">
           <span>{String(actionError)}</span>
-          <button className="plm-alert-close" onClick={() => setActionError("")}>
+          <button className="plm-alert-close" onClick={() => setActionError("")}
+          >
             ×
           </button>
         </div>
@@ -216,11 +219,17 @@ function PartList({ onCreateClick, onEditClick, onDeleteClick, reloadFlag }) {
           <tbody>
             {displayedParts.map((part) => (
               <tr key={part.id} className="plm-table-row">
-                <td className="plm-part-number">
+                <td
+                  className="plm-part-number"
+                  onClick={() => navigate(`/parts/${part.id}`)}
+                  style={{ cursor: "pointer" }}
+                >
                   <span className="plm-link">{part.partNumber}</span>
                 </td>
 
-                <td>{part.name}</td>
+                <td onClick={() => navigate(`/parts/${part.id}`)} style={{ cursor: "pointer" }}>
+                  {part.name}
+                </td>
                 <td className="plm-revision">{part.revisionSequence}</td>
 
                 <td>
@@ -252,7 +261,7 @@ function PartList({ onCreateClick, onEditClick, onDeleteClick, reloadFlag }) {
             className="plm-popover-item"
             onClick={() => {
               closePopover();
-              if (EDITABLE_STATES.has(activePart.lifecycleState)) onEditClick?.(activePart);
+              navigate(`/parts/${activePart.id}`);
             }}
           >
             📄 Open
