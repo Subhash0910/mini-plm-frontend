@@ -126,15 +126,15 @@ function BomStructureTab({ partId, showToast }) {
       for (let i = 0; i < payload.bomLines.length; i++) {
         const line = payload.bomLines[i];
         if (!line.componentPartId || line.componentPartId === 0) {
-          showToast?.(`BOM line ${i + 1} must have a valid componentPartId", "error");
+          showToast?.(`BOM line ${i + 1} must have a valid componentPartId`, "error");
           return;
         }
         if (!line.lineNumber) {
-          showToast?.(`BOM line ${i + 1} must have a lineNumber", "error");
+          showToast?.(`BOM line ${i + 1} must have a lineNumber`, "error");
           return;
         }
         if (!line.quantity || line.quantity <= 0) {
-          showToast?.(`BOM line ${i + 1} must have a valid quantity", "error");
+          showToast?.(`BOM line ${i + 1} must have a valid quantity`, "error");
           return;
         }
       }
