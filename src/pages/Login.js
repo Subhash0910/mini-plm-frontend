@@ -34,7 +34,7 @@ const Login = () => {
     }
   };
 
-  const useDemoCredentials = (cred) => {
+  const fillDemoCredentials = (cred) => {
     setUsername(cred.username);
     setPassword(cred.password);
   };
@@ -133,7 +133,7 @@ const Login = () => {
                   key={idx}
                   type="button"
                   className="btn btn-demo"
-                  onClick={() => useDemoCredentials(cred)}
+                  onClick={() => fillDemoCredentials(cred)}
                 >
                   <div className="demo-role">{cred.role}</div>
                   <div className="demo-username">{cred.username}</div>
