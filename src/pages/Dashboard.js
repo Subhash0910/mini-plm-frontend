@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { api } from '../services/api';
+import { default as api } from '../services/api';
 import '../styles/Dashboard.css';
 
 const Dashboard = () => {
@@ -9,14 +9,14 @@ const Dashboard = () => {
   const { user, logout } = useAuth();
   const [systemStatus, setSystemStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     totalParts: 0,
     totalChanges: 0,
     activeProjects: 0,
     pendingApprovals: 0
   });
 
-  useEffect(() =>{
+  useEffect(() => {
     const fetchSystemStatus = async () => {
       try {
         const response = await api.get('/health');
@@ -102,7 +102,7 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon icon-projects">🎯</div>
+                <div className="stat-icon icon-projects">🏗️</div>
                 <div className="stat-content">
                   <h4>Active Projects</h4>
                   <p className="stat-value">{stats.activeProjects}</p>
@@ -197,9 +197,9 @@ const Dashboard = () => {
           <div className="footer-content">
             <p>&copy; 2026 MiniPLM. Enterprise-grade Product Lifecycle Management.</p>
             <div className="footer-links">
-              <a href="#">Documentation</a>
-              <a href="#">Support</a>
-              <a href="#">Terms</a>
+              <button className="footer-link" onClick={() => {}} type="button">Documentation</button>
+              <button className="footer-link" onClick={() => {}} type="button">Support</button>
+              <button className="footer-link" onClick={() => {}} type="button">Terms</button>
             </div>
           </div>
         </div>
