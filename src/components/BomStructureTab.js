@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import BomService from "../services/BomService";
+import PartService from "../services/PartService";
 import { auth } from "../services/auth";
 import "./bomStructureTab.css";
 
@@ -18,6 +19,8 @@ function BomStructureTab({ partId, showToast }) {
 
   const [bom, setBom] = useState(null);
   const [flattened, setFlattened] = useState([]);
+  const [partCache, setPartCache] = useState({});
+  const [expandedRows, setExpandedRows] = useState(new Set());
 
   // Inline editing state
   const [isEditing, setIsEditing] = useState(false);
@@ -26,23 +29,38 @@ function BomStructureTab({ partId, showToast }) {
   const [description, setDescription] = useState("");
   const [bomLines, setBomLines] = useState([]);
 
+  // Fetch part details for enrichment
+  const fetchPartDetails = async (partId) => {
+    try {
+      if (partCache[partId]) return partCache[partId];
+      const res = await PartService.getPartById(partId);
+      const partData = res?.data || {};
+      setPartCache((prev) => ({ ...prev, [partId]: partData }));
+      return partData;
+    } catch (e) {
+      console.warn(`Failed to fetch part ${partId}:`, e);
+      return {};
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     setError("");
     setBom(null);
     setFlattened([]);
     setIsEditing(false);
+    setExpandedRows(new Set());
 
     try {
       const res = await BomService.getActiveBomForPart(partId);
-      
+
       if (!res || !res.data) {
         setBom(null);
         setFlattened([]);
         setError("");
         return;
       }
-      
+
       setBom(res.data);
 
       const bomId = res?.data?.id;
@@ -50,6 +68,16 @@ function BomStructureTab({ partId, showToast }) {
         try {
           const flat = await BomService.getFlattenedBom(bomId);
           setFlattened(Array.isArray(flat.data) ? flat.data : []);
+
+          // Pre-load part details for all children
+          if (Array.isArray(flat.data)) {
+            for (const line of flat.data) {
+              const childId = line.componentPartNumber || line.child;
+              if (childId) {
+                await fetchPartDetails(childId);
+              }
+            }
+          }
         } catch (flatError) {
           console.warn("Failed to load flattened BOM:", flatError);
           setFlattened([]);
@@ -57,13 +85,14 @@ function BomStructureTab({ partId, showToast }) {
       }
     } catch (e) {
       const status = e?.response?.status;
-      const message = e?.response?.data?.message || 
-                     e?.response?.data || 
-                     e?.message || 
-                     "Failed to load BOM";
-      
+      const message =
+        e?.response?.data?.message ||
+        e?.response?.data ||
+        e?.message ||
+        "Failed to load BOM";
+
       console.error("BOM load error:", e);
-      
+
       if (status === 404 || message.includes("No active BOM")) {
         setBom(null);
         setFlattened([]);
@@ -86,7 +115,9 @@ function BomStructureTab({ partId, showToast }) {
       setBomName(bom.bomName || "");
       setBomVersion(bom.bomVersion || "1.0");
       setDescription(bom.description || "");
-      setBomLines(bom.bomLines ? JSON.parse(JSON.stringify(bom.bomLines)) : []);
+      setBomLines(
+        bom.bomLines ? JSON.parse(JSON.stringify(bom.bomLines)) : []
+      );
     } else {
       // Create mode
       setBomName(`BOM-${partId}`);
@@ -157,17 +188,21 @@ function BomStructureTab({ partId, showToast }) {
       // Validate each line
       for (let i = 0; i < bomLines.length; i++) {
         const line = bomLines[i];
-        
-        if (!line.componentPartId || line.componentPartId === 0 || line.componentPartId === "0") {
+
+        if (
+          !line.componentPartId ||
+          line.componentPartId === 0 ||
+          line.componentPartId === "0"
+        ) {
           setError(`BOM line ${i + 1}: Select a valid component part`);
           return;
         }
-        
+
         if (!line.lineNumber) {
           setError(`BOM line ${i + 1}: Line number is required`);
           return;
         }
-        
+
         if (!line.quantity || line.quantity <= 0) {
           setError(`BOM line ${i + 1}: Quantity must be greater than 0`);
           return;
@@ -193,13 +228,39 @@ function BomStructureTab({ partId, showToast }) {
       setIsEditing(false);
       await load();
     } catch (e) {
-      const message = e?.response?.data?.message || 
-                     e?.response?.data || 
-                     e?.message || 
-                     "Failed to save BOM";
+      const message =
+        e?.response?.data?.message ||
+        e?.response?.data ||
+        e?.message ||
+        "Failed to save BOM";
       setError(String(message));
       console.error("BOM save error:", e);
     }
+  };
+
+  const toggleExpand = (rowIndex) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(rowIndex)) {
+      newExpanded.delete(rowIndex);
+    } else {
+      newExpanded.add(rowIndex);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  const getPartInfo = (partId) => {
+    return partCache[partId] || {};
+  };
+
+  const getStatusBadge = (status) => {
+    const statusMap = {
+      "IN_WORK": { label: "In Work", className: "badge-info" },
+      "RELEASED": { label: "Released", className: "badge-success" },
+      "OBSOLETE": { label: "Obsolete", className: "badge-danger" },
+      "DRAFT": { label: "Draft", className: "badge-warning" },
+    };
+    const info = statusMap[status] || { label: status || "Unknown", className: "badge-secondary" };
+    return info;
   };
 
   return (
@@ -207,13 +268,19 @@ function BomStructureTab({ partId, showToast }) {
       <div className="wc-bom-header">
         <div>
           <h3 className="wc-bom-title">Structure (BOM)</h3>
-          <div className="wc-bom-sub">Active BOM for this part. Flattened view resembles structure browser.</div>
+          <div className="wc-bom-sub">
+            Active BOM for this part. Flattened view with rich component details.
+          </div>
         </div>
 
         <div className="wc-bom-actions">
           {!isEditing ? (
             <>
-              <button className="btn btn-sm btn-outline-secondary" onClick={load} disabled={loading}>
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={load}
+                disabled={loading}
+              >
                 Refresh
               </button>
               {canWrite && (
@@ -224,7 +291,10 @@ function BomStructureTab({ partId, showToast }) {
             </>
           ) : (
             <>
-              <button className="btn btn-sm btn-outline-secondary" onClick={cancelEditing}>
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={cancelEditing}
+              >
                 Cancel
               </button>
               <button className="btn btn-sm btn-primary" onClick={saveBom}>
@@ -235,7 +305,9 @@ function BomStructureTab({ partId, showToast }) {
         </div>
       </div>
 
-      {loading && <div className="wc-bom-info">Loading BOM structure…</div>}
+      {loading && (
+        <div className="wc-bom-info">Loading BOM structure…</div>
+      )}
       {error && <div className="wc-bom-error">{String(error)}</div>}
 
       {/* EDITING MODE - Inline Form */}
@@ -244,7 +316,7 @@ function BomStructureTab({ partId, showToast }) {
           {/* BOM Header Fields */}
           <div className="wc-bom-editor-section">
             <h4 className="wc-section-title">BOM Information</h4>
-            
+
             <div className="wc-form-row">
               <div className="wc-form-group">
                 <label className="wc-label">BOM Name</label>
@@ -294,7 +366,9 @@ function BomStructureTab({ partId, showToast }) {
             </div>
 
             {bomLines.length === 0 ? (
-              <div className="wc-bom-empty-message">No BOM lines. Click "Add Line" to add components.</div>
+              <div className="wc-bom-empty-message">
+                No BOM lines. Click "Add Line" to add components.
+              </div>
             ) : (
               <div className="wc-bom-lines-table">
                 <table>
@@ -317,7 +391,9 @@ function BomStructureTab({ partId, showToast }) {
                             type="number"
                             className="wc-input-sm"
                             value={line.lineNumber}
-                            onChange={(e) => updateBomLine(idx, "lineNumber", Number(e.target.value))}
+                            onChange={(e) =>
+                              updateBomLine(idx, "lineNumber", Number(e.target.value))
+                            }
                             min="1"
                           />
                         </td>
@@ -326,7 +402,9 @@ function BomStructureTab({ partId, showToast }) {
                             type="number"
                             className="wc-input-sm"
                             value={line.componentPartId}
-                            onChange={(e) => updateBomLine(idx, "componentPartId", Number(e.target.value))}
+                            onChange={(e) =>
+                              updateBomLine(idx, "componentPartId", Number(e.target.value))
+                            }
                             placeholder="Part ID"
                             min="1"
                           />
@@ -336,7 +414,9 @@ function BomStructureTab({ partId, showToast }) {
                             type="number"
                             className="wc-input-sm"
                             value={line.quantity}
-                            onChange={(e) => updateBomLine(idx, "quantity", Number(e.target.value))}
+                            onChange={(e) =>
+                              updateBomLine(idx, "quantity", Number(e.target.value))
+                            }
                             min="1"
                           />
                         </td>
@@ -344,7 +424,9 @@ function BomStructureTab({ partId, showToast }) {
                           <select
                             className="wc-input-sm"
                             value={line.unitOfMeasure}
-                            onChange={(e) => updateBomLine(idx, "unitOfMeasure", e.target.value)}
+                            onChange={(e) =>
+                              updateBomLine(idx, "unitOfMeasure", e.target.value)
+                            }
                           >
                             <option>EA</option>
                             <option>KG</option>
@@ -358,7 +440,9 @@ function BomStructureTab({ partId, showToast }) {
                             type="text"
                             className="wc-input-sm"
                             value={line.referenceDesignator}
-                            onChange={(e) => updateBomLine(idx, "referenceDesignator", e.target.value)}
+                            onChange={(e) =>
+                              updateBomLine(idx, "referenceDesignator", e.target.value)
+                            }
                             placeholder="U1, C1-C4"
                           />
                         </td>
@@ -367,7 +451,9 @@ function BomStructureTab({ partId, showToast }) {
                             type="text"
                             className="wc-input-sm"
                             value={line.notes}
-                            onChange={(e) => updateBomLine(idx, "notes", e.target.value)}
+                            onChange={(e) =>
+                              updateBomLine(idx, "notes", e.target.value)
+                            }
                             placeholder="Notes"
                           />
                         </td>
@@ -395,7 +481,9 @@ function BomStructureTab({ partId, showToast }) {
       {!loading && !isEditing && !error && !bom && (
         <div className="wc-bom-empty">
           No active BOM found for this part.
-          {canWrite ? " Click 'Create BOM' to start building the structure." : ""}
+          {canWrite
+            ? " Click 'Create BOM' to start building the structure."
+            : ""}
         </div>
       )}
 
@@ -404,37 +492,81 @@ function BomStructureTab({ partId, showToast }) {
           <div className="wc-bom-meta">
             <div className="wc-bom-pill">BOM ID: {bom.id}</div>
             {bom?.bomName && <div className="wc-bom-pill">Name: {bom.bomName}</div>}
-            {bom?.bomVersion && <div className="wc-bom-pill">Version: {bom.bomVersion}</div>}
-            {bom?.isActive !== undefined && <div className="wc-bom-pill">Active: {String(bom.isActive)}</div>}
+            {bom?.bomVersion && (
+              <div className="wc-bom-pill">Version: {bom.bomVersion}</div>
+            )}
+            {bom?.isActive !== undefined && (
+              <div className="wc-bom-pill">Active: {String(bom.isActive)}</div>
+            )}
           </div>
 
           {!loading && (
             <div className="wc-bom-table-wrap">
-              <table className="wc-bom-table">
+              <table className="wc-bom-table-enhanced">
                 <thead>
                   <tr>
-                    <th>Level</th>
-                    <th>Parent</th>
-                    <th>Child</th>
-                    <th>Qty</th>
+                    <th style={{ width: "5%" }}>Lvl</th>
+                    <th style={{ width: "12%" }}>Part ID</th>
+                    <th style={{ width: "20%" }}>Part Name</th>
+                    <th style={{ width: "15%" }}>Status</th>
+                    <th style={{ width: "8%" }}>Qty</th>
+                    <th style={{ width: "10%" }}>Unit</th>
+                    <th style={{ width: "20%" }}>Description</th>
+                    <th style={{ width: "10%" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {flattened.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="wc-bom-empty-row">
+                      <td colSpan={8} className="wc-bom-empty-row">
                         No BOM lines (flattened view is empty).
                       </td>
                     </tr>
                   ) : (
-                    flattened.map((line, idx) => (
-                      <tr key={idx}>
-                        <td>{safeString(line.level ?? line.depth ?? "")}</td>
-                        <td>{safeString(line.parentPartNumber ?? line.parent ?? line.parentNumber ?? "")}</td>
-                        <td>{safeString(line.componentPartNumber ?? line.child ?? line.childNumber ?? "")}</td>
-                        <td>{safeString(line.quantity ?? line.qty ?? "")}</td>
-                      </tr>
-                    ))
+                    flattened.map((line, idx) => {
+                      const childId =
+                        line.componentPartNumber || line.child || line.childNumber;
+                      const partInfo = getPartInfo(childId);
+                      const statusInfo = getStatusBadge(partInfo?.status);
+                      const isExpanded = expandedRows.has(idx);
+
+                      return (
+                        <tr key={idx} className="wc-bom-data-row">
+                          <td className="wc-bom-level">
+                            {safeString(line.level ?? line.depth ?? "")}
+                          </td>
+                          <td className="wc-bom-part-id">
+                            <strong>{safeString(childId)}</strong>
+                          </td>
+                          <td className="wc-bom-part-name">
+                            {partInfo?.partName || partInfo?.name || "—"}
+                          </td>
+                          <td className="wc-bom-status">
+                            <span className={`wc-badge ${statusInfo.className}`}>
+                              {statusInfo.label}
+                            </span>
+                          </td>
+                          <td className="wc-bom-qty">
+                            {safeString(line.quantity ?? line.qty ?? "")}
+                          </td>
+                          <td className="wc-bom-unit">
+                            {safeString(line.unitOfMeasure ?? line.unit ?? "EA")}
+                          </td>
+                          <td className="wc-bom-description">
+                            {partInfo?.description || "—"}
+                          </td>
+                          <td className="wc-bom-actions">
+                            <button
+                              className="btn btn-xs btn-outline-secondary"
+                              onClick={() => toggleExpand(idx)}
+                              title={isExpanded ? "Collapse" : "Expand details"}
+                            >
+                              {isExpanded ? "−" : "+"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
