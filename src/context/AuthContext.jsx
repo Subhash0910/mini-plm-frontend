@@ -28,11 +28,11 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (username, password) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await authAPI.login({ email, password });
+      const response = await authAPI.login({ username, password });
 
       const { token: authToken, refreshToken, user: userData } = response.data;
 
