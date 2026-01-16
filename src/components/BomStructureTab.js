@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import BomService from "../services/BomService";
 import { auth } from "../services/auth";
-import JsonEditorPanel from "./JsonEditorPanel";
 import "./bomStructureTab.css";
 
 function safeString(v) {
@@ -20,49 +19,27 @@ function BomStructureTab({ partId, showToast }) {
   const [bom, setBom] = useState(null);
   const [flattened, setFlattened] = useState([]);
 
-  const [showEditor, setShowEditor] = useState(false);
-
-  // Fixed: Use correct backend field names
-  // - parentPartId (not partId)
-  // - bomName (not name)
-  // - bomLines (not lines)
-  // - componentPartId (not childPartId, and must be actual part ID, not 0)
-  // - lineNumber (required field)
-  const editorTemplate = useMemo(() => {
-    return {
-      parentPartId: Number(partId),
-      bomName: `BOM-${partId}`,
-      bomVersion: "1.0",
-      description: "",
-      bomLines: [
-        {
-          componentPartId: 0,  // User must change this to actual part ID!
-          lineNumber: 1,
-          quantity: 1,
-          unitOfMeasure: "EA",
-          referenceDesignator: "",
-          notes: "",
-          sequenceNumber: 1,
-        },
-      ],
-    };
-  }, [partId]);
+  // Inline editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [bomName, setBomName] = useState("");
+  const [bomVersion, setBomVersion] = useState("1.0");
+  const [description, setDescription] = useState("");
+  const [bomLines, setBomLines] = useState([]);
 
   const load = async () => {
     setLoading(true);
     setError("");
     setBom(null);
     setFlattened([]);
+    setIsEditing(false);
 
     try {
       const res = await BomService.getActiveBomForPart(partId);
       
-      // FIX: Handle both null response and empty data gracefully
-      // When backend returns 200 with null data, it means "no BOM found"
       if (!res || !res.data) {
         setBom(null);
         setFlattened([]);
-        setError("");  // FIX: Don't show error, just show empty state
+        setError("");
         return;
       }
       
@@ -87,16 +64,11 @@ function BomStructureTab({ partId, showToast }) {
       
       console.error("BOM load error:", e);
       
-      // FIX: Don't treat "no active BOM" as an error
-      // The backend now returns null instead of 500, but if we still get 404 or similar,
-      // treat it as "no BOM created yet"
       if (status === 404 || message.includes("No active BOM")) {
-        // Not found - this is okay, just no BOM yet
         setBom(null);
         setFlattened([]);
         setError("");
       } else {
-        // Real error
         setError(`Error: ${message}`);
       }
     } finally {
@@ -109,45 +81,106 @@ function BomStructureTab({ partId, showToast }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partId]);
 
-  const upsertBom = async (payload) => {
+  const startEditing = () => {
+    if (bom) {
+      setBomName(bom.bomName || "");
+      setBomVersion(bom.bomVersion || "1.0");
+      setDescription(bom.description || "");
+      setBomLines(bom.bomLines ? JSON.parse(JSON.stringify(bom.bomLines)) : []);
+    } else {
+      // Create mode
+      setBomName(`BOM-${partId}`);
+      setBomVersion("1.0");
+      setDescription("");
+      setBomLines([
+        {
+          componentPartId: 0,
+          lineNumber: 1,
+          quantity: 1,
+          unitOfMeasure: "EA",
+          referenceDesignator: "",
+          notes: "",
+          sequenceNumber: 1,
+        },
+      ]);
+    }
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setError("");
+  };
+
+  const addBomLine = () => {
+    const newLine = {
+      componentPartId: 0,
+      lineNumber: bomLines.length + 1,
+      quantity: 1,
+      unitOfMeasure: "EA",
+      referenceDesignator: "",
+      notes: "",
+      sequenceNumber: bomLines.length + 1,
+    };
+    setBomLines([...bomLines, newLine]);
+  };
+
+  const removeBomLine = (index) => {
+    setBomLines(bomLines.filter((_, i) => i !== index));
+  };
+
+  const updateBomLine = (index, field, value) => {
+    const updated = [...bomLines];
+    updated[index] = { ...updated[index], [field]: value };
+    setBomLines(updated);
+  };
+
+  const saveBom = async () => {
     if (!canWrite) {
       showToast?.("Read-only: only ENGINEER/ADMIN can create or update BOM", "info");
       return;
     }
 
     try {
-      // Validate payload structure
-      if (!payload || !payload.parentPartId || !Array.isArray(payload.bomLines) || payload.bomLines.length === 0) {
-        showToast?.("BOM must have parentPartId and at least one line item", "error");
+      setError("");
+
+      if (!bomName || bomName.trim() === "") {
+        setError("BOM name is required");
         return;
       }
 
-      if (!payload.bomName || payload.bomName.trim() === "") {
-        showToast?.("BOM name is required", "error");
+      if (!Array.isArray(bomLines) || bomLines.length === 0) {
+        setError("BOM must have at least one line item");
         return;
       }
 
-      // FIX: Validate each BOM line BEFORE sending to backend
-      // User must select actual part IDs, not leave them as 0
-      for (let i = 0; i < payload.bomLines.length; i++) {
-        const line = payload.bomLines[i];
+      // Validate each line
+      for (let i = 0; i < bomLines.length; i++) {
+        const line = bomLines[i];
         
-        // Check if componentPartId is missing or is 0 (default/unselected value)
         if (!line.componentPartId || line.componentPartId === 0 || line.componentPartId === "0") {
-          showToast?.(`BOM line ${i + 1} must have a valid componentPartId (select an actual part, not 0)`, "error");
+          setError(`BOM line ${i + 1}: Select a valid component part`);
           return;
         }
         
         if (!line.lineNumber) {
-          showToast?.(`BOM line ${i + 1} must have a lineNumber`, "error");
+          setError(`BOM line ${i + 1}: Line number is required`);
           return;
         }
         
         if (!line.quantity || line.quantity <= 0) {
-          showToast?.(`BOM line ${i + 1} must have a valid quantity (>0)`, "error");
+          setError(`BOM line ${i + 1}: Quantity must be greater than 0`);
           return;
         }
       }
+
+      const payload = {
+        parentPartId: Number(partId),
+        bomName,
+        bomVersion,
+        description,
+        bomLines,
+      };
 
       if (bom?.id) {
         await BomService.updateBom(bom.id, payload);
@@ -157,14 +190,14 @@ function BomStructureTab({ partId, showToast }) {
         showToast?.("BOM created successfully", "success");
       }
 
-      setShowEditor(false);
+      setIsEditing(false);
       await load();
     } catch (e) {
       const message = e?.response?.data?.message || 
                      e?.response?.data || 
                      e?.message || 
                      "Failed to save BOM";
-      showToast?.(String(message), "error");
+      setError(String(message));
       console.error("BOM save error:", e);
     }
   };
@@ -178,13 +211,26 @@ function BomStructureTab({ partId, showToast }) {
         </div>
 
         <div className="wc-bom-actions">
-          <button className="btn btn-sm btn-outline-secondary" onClick={load} disabled={loading}>
-            Refresh
-          </button>
-          {canWrite && (
-            <button className="btn btn-sm btn-primary" onClick={() => setShowEditor(true)}>
-              {bom?.id ? "Update BOM" : "Create BOM"}
-            </button>
+          {!isEditing ? (
+            <>
+              <button className="btn btn-sm btn-outline-secondary" onClick={load} disabled={loading}>
+                Refresh
+              </button>
+              {canWrite && (
+                <button className="btn btn-sm btn-primary" onClick={startEditing}>
+                  {bom?.id ? "Edit BOM" : "Create BOM"}
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <button className="btn btn-sm btn-outline-secondary" onClick={cancelEditing}>
+                Cancel
+              </button>
+              <button className="btn btn-sm btn-primary" onClick={saveBom}>
+                Save BOM
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -192,62 +238,209 @@ function BomStructureTab({ partId, showToast }) {
       {loading && <div className="wc-bom-info">Loading BOM structure…</div>}
       {error && <div className="wc-bom-error">{String(error)}</div>}
 
-      {!loading && !error && !bom && (
+      {/* EDITING MODE - Inline Form */}
+      {isEditing && (
+        <div className="wc-bom-editor">
+          {/* BOM Header Fields */}
+          <div className="wc-bom-editor-section">
+            <h4 className="wc-section-title">BOM Information</h4>
+            
+            <div className="wc-form-row">
+              <div className="wc-form-group">
+                <label className="wc-label">BOM Name</label>
+                <input
+                  type="text"
+                  className="wc-input"
+                  value={bomName}
+                  onChange={(e) => setBomName(e.target.value)}
+                  placeholder="e.g., Assembly-001"
+                />
+              </div>
+              <div className="wc-form-group">
+                <label className="wc-label">Version</label>
+                <input
+                  type="text"
+                  className="wc-input"
+                  value={bomVersion}
+                  onChange={(e) => setBomVersion(e.target.value)}
+                  placeholder="1.0"
+                />
+              </div>
+            </div>
+
+            <div className="wc-form-group">
+              <label className="wc-label">Description</label>
+              <textarea
+                className="wc-input wc-textarea"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="BOM description (optional)"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          {/* BOM Lines Table */}
+          <div className="wc-bom-editor-section">
+            <div className="wc-section-header">
+              <h4 className="wc-section-title">BOM Lines</h4>
+              <button
+                type="button"
+                className="btn btn-xs btn-outline-primary"
+                onClick={addBomLine}
+              >
+                + Add Line
+              </button>
+            </div>
+
+            {bomLines.length === 0 ? (
+              <div className="wc-bom-empty-message">No BOM lines. Click "Add Line" to add components.</div>
+            ) : (
+              <div className="wc-bom-lines-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style={{ width: "5%" }}>Line</th>
+                      <th style={{ width: "15%" }}>Component ID</th>
+                      <th style={{ width: "10%" }}>Qty</th>
+                      <th style={{ width: "12%" }}>Unit</th>
+                      <th style={{ width: "15%" }}>Ref Des</th>
+                      <th style={{ width: "30%" }}>Notes</th>
+                      <th style={{ width: "13%" }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bomLines.map((line, idx) => (
+                      <tr key={idx} className="wc-bom-line-row">
+                        <td>
+                          <input
+                            type="number"
+                            className="wc-input-sm"
+                            value={line.lineNumber}
+                            onChange={(e) => updateBomLine(idx, "lineNumber", Number(e.target.value))}
+                            min="1"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            className="wc-input-sm"
+                            value={line.componentPartId}
+                            onChange={(e) => updateBomLine(idx, "componentPartId", Number(e.target.value))}
+                            placeholder="Part ID"
+                            min="1"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            className="wc-input-sm"
+                            value={line.quantity}
+                            onChange={(e) => updateBomLine(idx, "quantity", Number(e.target.value))}
+                            min="1"
+                          />
+                        </td>
+                        <td>
+                          <select
+                            className="wc-input-sm"
+                            value={line.unitOfMeasure}
+                            onChange={(e) => updateBomLine(idx, "unitOfMeasure", e.target.value)}
+                          >
+                            <option>EA</option>
+                            <option>KG</option>
+                            <option>M</option>
+                            <option>L</option>
+                            <option>PCS</option>
+                          </select>
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            className="wc-input-sm"
+                            value={line.referenceDesignator}
+                            onChange={(e) => updateBomLine(idx, "referenceDesignator", e.target.value)}
+                            placeholder="U1, C1-C4"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            className="wc-input-sm"
+                            value={line.notes}
+                            onChange={(e) => updateBomLine(idx, "notes", e.target.value)}
+                            placeholder="Notes"
+                          />
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-outline-danger"
+                            onClick={() => removeBomLine(idx)}
+                            title="Remove line"
+                          >
+                            ✕ Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* VIEW MODE - Display BOM */}
+      {!loading && !isEditing && !error && !bom && (
         <div className="wc-bom-empty">
           No active BOM found for this part.
           {canWrite ? " Click 'Create BOM' to start building the structure." : ""}
         </div>
       )}
 
-      {bom && (
-        <div className="wc-bom-meta">
-          <div className="wc-bom-pill">BOM ID: {bom.id}</div>
-          {bom?.bomName && <div className="wc-bom-pill">Name: {bom.bomName}</div>}
-          {bom?.isActive !== undefined && <div className="wc-bom-pill">Active: {String(bom.isActive)}</div>}
-        </div>
-      )}
+      {bom && !isEditing && (
+        <>
+          <div className="wc-bom-meta">
+            <div className="wc-bom-pill">BOM ID: {bom.id}</div>
+            {bom?.bomName && <div className="wc-bom-pill">Name: {bom.bomName}</div>}
+            {bom?.bomVersion && <div className="wc-bom-pill">Version: {bom.bomVersion}</div>}
+            {bom?.isActive !== undefined && <div className="wc-bom-pill">Active: {String(bom.isActive)}</div>}
+          </div>
 
-      {!loading && bom && (
-        <div className="wc-bom-table-wrap">
-          <table className="wc-bom-table">
-            <thead>
-              <tr>
-                <th>Level</th>
-                <th>Parent</th>
-                <th>Child</th>
-                <th>Qty</th>
-              </tr>
-            </thead>
-            <tbody>
-              {flattened.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="wc-bom-empty-row">
-                    No BOM lines (flattened view is empty).
-                  </td>
-                </tr>
-              ) : (
-                flattened.map((line, idx) => (
-                  <tr key={idx}>
-                    <td>{safeString(line.level ?? line.depth ?? "")}</td>
-                    <td>{safeString(line.parentPartNumber ?? line.parent ?? line.parentNumber ?? "")}</td>
-                    <td>{safeString(line.componentPartNumber ?? line.child ?? line.childNumber ?? "")}</td>
-                    <td>{safeString(line.quantity ?? line.qty ?? "")}</td>
+          {!loading && (
+            <div className="wc-bom-table-wrap">
+              <table className="wc-bom-table">
+                <thead>
+                  <tr>
+                    <th>Level</th>
+                    <th>Parent</th>
+                    <th>Child</th>
+                    <th>Qty</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {showEditor && (
-        <JsonEditorPanel
-          title={bom?.id ? "Update BOM (JSON)" : "Create BOM (JSON)"}
-          initialJson={editorTemplate}
-          submitLabel={bom?.id ? "Update" : "Create"}
-          onSubmit={upsertBom}
-          onClose={() => setShowEditor(false)}
-        />
+                </thead>
+                <tbody>
+                  {flattened.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="wc-bom-empty-row">
+                        No BOM lines (flattened view is empty).
+                      </td>
+                    </tr>
+                  ) : (
+                    flattened.map((line, idx) => (
+                      <tr key={idx}>
+                        <td>{safeString(line.level ?? line.depth ?? "")}</td>
+                        <td>{safeString(line.parentPartNumber ?? line.parent ?? line.parentNumber ?? "")}</td>
+                        <td>{safeString(line.componentPartNumber ?? line.child ?? line.childNumber ?? "")}</td>
+                        <td>{safeString(line.quantity ?? line.qty ?? "")}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
