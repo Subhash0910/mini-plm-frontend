@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { api } from '../services/api';
+import { default as api } from '../services/api';
 import '../styles/Auth.css';
 
 const Login = () => {
@@ -11,6 +11,11 @@ const Login = () => {
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  const demoCredentials = [
+    { username: 'admin', password: 'admin123', role: 'Admin' },
+    { username: 'user', password: 'user123', role: 'User' }
+  ];
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,11 +33,6 @@ const Login = () => {
       setLoading(false);
     }
   };
-
-  const demoCredentials = [
-    { username: 'admin', password: 'admin123', role: 'Admin' },
-    { username: 'user', password: 'user123', role: 'User' }
-  ];
 
   const useDemoCredentials = (cred) => {
     setUsername(cred.username);
