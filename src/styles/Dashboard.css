@@ -531,15 +531,20 @@
   gap: 24px;
 }
 
-.footer-links a {
+.footer-link {
   font-size: 13px;
   color: #0066cc;
   text-decoration: none;
   font-weight: 500;
   transition: color 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
 }
 
-.footer-links a:hover {
+.footer-link:hover {
   color: #004a99;
   text-decoration: underline;
 }
