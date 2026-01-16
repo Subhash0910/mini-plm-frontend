@@ -75,6 +75,11 @@ const MainLayout = ({ themeMode, onThemeChange }) => {
     if (isMobile) setMobileOpen(false);
   };
 
+  // Get display name from user data - priority: username > email > 'User'
+  const displayName = user?.username || user?.name || user?.email?.split('@')[0] || 'User';
+  const displayEmail = user?.email || 'user@example.com';
+  const avatarInitial = displayName.charAt(0).toUpperCase();
+
   const drawerContent = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box
@@ -138,14 +143,14 @@ const MainLayout = ({ themeMode, onThemeChange }) => {
       <Divider />
 
       <Box sx={{ p: 2, backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#f5f5f5' }}>
-        <Typography variant="caption" sx={{ opacity: 0.7 }}>
+        <Typography variant="caption" sx={{ opacity: 0.7, textTransform: 'uppercase', fontSize: '0.7rem', fontWeight: 700 }}>
           LOGGED IN AS
         </Typography>
-        <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
-          {user?.name || 'User'}
+        <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5, wordBreak: 'break-word' }}>
+          {displayName}
         </Typography>
-        <Typography variant="caption" sx={{ opacity: 0.6 }}>
-          {user?.email || 'user@example.com'}
+        <Typography variant="caption" sx={{ opacity: 0.6, display: 'block', wordBreak: 'break-all', mt: 0.5 }}>
+          {displayEmail}
         </Typography>
       </Box>
     </Box>
@@ -213,7 +218,7 @@ const MainLayout = ({ themeMode, onThemeChange }) => {
               <Tooltip title="Profile">
                 <IconButton onClick={handleProfileClick} size="small" sx={{ ml: 1 }}>
                   <Avatar sx={{ width: 32, height: 32, backgroundColor: theme.palette.secondary.main, cursor: 'pointer', fontSize: '0.875rem' }}>
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                    {avatarInitial}
                   </Avatar>
                 </IconButton>
               </Tooltip>
