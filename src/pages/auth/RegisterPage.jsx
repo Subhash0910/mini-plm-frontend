@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
-  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,7 +23,7 @@ const RegisterPage = () => {
     }
 
     setLoading(true);
-    const result = await register({ name, email, password });
+    const result = await register({ username, email, password });
     if (result.success) {
       navigate('/');
     } else {
@@ -49,11 +49,12 @@ const RegisterPage = () => {
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              label="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               margin="normal"
               required
+              helperText="Username must be 3-50 characters"
             />
             <TextField
               fullWidth
@@ -72,6 +73,7 @@ const RegisterPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               margin="normal"
               required
+              helperText="Password must be at least 6 characters"
             />
             <TextField
               fullWidth
