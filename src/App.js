@@ -1,202 +1,264 @@
-import React, { useCallback, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 
-import Layout from "./components/Layout";
-import PartList from "./components/PartList";
-import CreatePartPanel from "./components/CreatePartPanel";
-import Toast from "./components/Toast";
-import PartDetails from "./components/PartDetails";
+// Contexts
+import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 
-import LoginPage from "./components/LoginPage";
-import SignupPage from "./components/SignupPage";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminUsersPage from "./components/AdminUsersPage";
-import ChangesPage from "./components/ChangesPage";
-import ChangeDetailsPage from "./components/ChangeDetailsPage";
+// Layouts
+import MainLayout from './layouts/MainLayout';
+import AuthLayout from './layouts/AuthLayout';
 
-import PartService from "./services/PartService";
-import { auth } from "./services/auth";
+// Pages - Auth
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 
-function HomePage({
-  showCreate,
-  setShowCreate,
-  editingPart,
-  setEditingPart,
-  reloadFlag,
-  setReloadFlag,
-  showToast,
-}) {
-  const user = auth.getUser();
-  const role = user?.role;
+// Pages - Dashboard
+import DashboardPage from './pages/dashboard/DashboardPage';
 
-  const canCreate = role === "ADMIN" || role === "ENGINEER";
-  const canEdit = role === "ADMIN" || role === "ENGINEER";
-  const canDelete = role === "ADMIN";
+// Pages - Products
+import ProductsPage from './pages/products/ProductsPage';
+import ProductDetailPage from './pages/products/ProductDetailPage';
+import CreateProductPage from './pages/products/CreateProductPage';
 
-  const handleEditPart = (part) => {
-    if (!canEdit) {
-      showToast("Read-only: only ENGINEER/ADMIN can edit parts", "info");
-      return;
-    }
-    setEditingPart(part);
-    setShowCreate(true);
-  };
+// Pages - Changes
+import ChangesPage from './pages/changes/ChangesPage';
+import ChangeDetailPage from './pages/changes/ChangeDetailPage';
+import CreateChangePage from './pages/changes/CreateChangePage';
 
-  const handleCreated = () => {
-    setShowCreate(false);
-    setEditingPart(null);
-    setReloadFlag(!reloadFlag);
-    showToast(editingPart ? "Part updated successfully" : "Part created successfully");
-  };
+// Pages - Parts
+import PartsPage from './pages/parts/PartsPage';
+import PartDetailPage from './pages/parts/PartDetailPage';
+import CreatePartPage from './pages/parts/CreatePartPage';
 
-  const handleDeletePart = (id) => {
-    if (!canDelete) {
-      showToast("Only ADMIN can delete parts", "info");
-      return;
-    }
+// Pages - Documents
+import DocumentsPage from './pages/documents/DocumentsPage';
 
-    if (!window.confirm("Delete this part?")) return;
+// Pages - Admin
+import SettingsPage from './pages/settings/SettingsPage';
+import UsersPage from './pages/admin/UsersPage';
 
-    PartService.deletePart(id)
-      .then(() => {
-        setReloadFlag(!reloadFlag);
-        showToast("Part deleted successfully", "info");
-      })
-      .catch((e) => {
-        showToast(
-          e?.response?.data?.message || e?.response?.data || "Failed to delete part",
-          "error"
-        );
-      });
-  };
+// Components
+import ProtectedRoute from './components/ProtectedRoute';
+import LoadingScreen from './components/LoadingScreen';
 
-  return (
-    <>
-      <PartList
-        onCreateClick={() => {
-          if (!canCreate) {
-            showToast("Read-only: only ENGINEER/ADMIN can create parts", "info");
-            return;
-          }
-          setShowCreate(true);
-        }}
-        onEditClick={handleEditPart}
-        onDeleteClick={handleDeletePart}
-        reloadFlag={reloadFlag}
-      />
+// Define Windchill-inspired theme
+const lightTheme = createTheme({
+  palette: {
+    primary: {
+      main: '#003d5c', // Windchill dark blue
+      light: '#005a8c',
+      dark: '#002a40',
+      contrastText: '#ffffff',
+    },
+    secondary: {
+      main: '#f57c00', // Orange accent
+      light: '#ffb74d',
+      dark: '#e65100',
+    },
+    success: {
+      main: '#4caf50',
+      light: '#81c784',
+      dark: '#388e3c',
+    },
+    warning: {
+      main: '#ff9800',
+      light: '#ffb74d',
+      dark: '#f57c00',
+    },
+    error: {
+      main: '#f44336',
+      light: '#ef5350',
+      dark: '#d32f2f',
+    },
+    info: {
+      main: '#2196f3',
+      light: '#64b5f6',
+      dark: '#1976d2',
+    },
+    background: {
+      default: '#f5f5f5',
+      paper: '#ffffff',
+    },
+    text: {
+      primary: '#212121',
+      secondary: '#757575',
+    },
+    divider: '#e0e0e0',
+  },
+  typography: {
+    fontFamily: [
+      '-apple-system',
+      'BlinkMacSystemFont',
+      '"Segoe UI"',
+      'Roboto',
+      '"Helvetica Neue"',
+      'Arial',
+      'sans-serif',
+    ].join(','),
+    h1: {
+      fontSize: '2rem',
+      fontWeight: 600,
+      color: '#003d5c',
+    },
+    h2: {
+      fontSize: '1.5rem',
+      fontWeight: 600,
+      color: '#003d5c',
+    },
+    h3: {
+      fontSize: '1.25rem',
+      fontWeight: 600,
+      color: '#003d5c',
+    },
+    button: {
+      textTransform: 'none',
+      fontWeight: 500,
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: '4px',
+          textTransform: 'none',
+          fontWeight: 500,
+          transition: 'all 0.3s ease',
+        },
+        contained: {
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          '&:hover': {
+            boxShadow: '0 4px 8px rgba(0,0,0,0.15)',
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: '4px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+          border: '1px solid #e0e0e0',
+          '&:hover': {
+            boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+          },
+        },
+      },
+    },
+    MuiTextField: {
+      defaultProps: {
+        variant: 'outlined',
+        size: 'small',
+      },
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            '&:hover fieldset': {
+              borderColor: '#003d5c',
+            },
+          },
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#003d5c',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#f5f5f5',
+          borderRight: '1px solid #e0e0e0',
+        },
+      },
+    },
+  },
+});
 
-      {showCreate && (
-        <CreatePartPanel
-          onClose={() => {
-            setShowCreate(false);
-            setEditingPart(null);
-          }}
-          onCreated={handleCreated}
-          existingPart={editingPart}
-        />
-      )}
-    </>
-  );
-}
-
-function PlaceholderPage({ title }) {
-  return (
-    <div className="container">
-      <h3>{title}</h3>
-      <p className="text-muted">Coming soon.</p>
-    </div>
-  );
-}
+const darkTheme = createTheme({
+  ...lightTheme,
+  palette: {
+    ...lightTheme.palette,
+    mode: 'dark',
+    background: {
+      default: '#121212',
+      paper: '#1e1e1e',
+    },
+    text: {
+      primary: '#ffffff',
+      secondary: '#b0b0b0',
+    },
+  },
+});
 
 function App() {
-  const [showCreate, setShowCreate] = useState(false);
-  const [reloadFlag, setReloadFlag] = useState(false);
-  const [editingPart, setEditingPart] = useState(null);
+  const [themeMode, setThemeMode] = useState('light');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState("success");
-
-  const showToast = useCallback((msg, type = "success") => {
-    setToastMessage(msg);
-    setToastType(type);
-    setTimeout(() => setToastMessage(""), 2500);
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('themeMode');
+    if (savedTheme) {
+      setThemeMode(savedTheme);
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setThemeMode(prefersDark ? 'dark' : 'light');
+    }
+    setIsLoading(false);
   }, []);
 
+  const handleThemeChange = (newMode) => {
+    setThemeMode(newMode);
+    localStorage.setItem('themeMode', newMode);
+  };
+
+  const currentTheme = themeMode === 'dark' ? darkTheme : lightTheme;
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
-    <BrowserRouter>
-      <Layout>
-        <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage("")} />
+    <ThemeProvider theme={currentTheme}>
+      <CssBaseline />
+      <AuthProvider>
+        <NotificationProvider>
+          <Router>
+            <Routes>
+              <Route element={<AuthLayout />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+              </Route>
 
-        <Routes>
-          <Route path="/login" element={<LoginPage showToast={showToast} />} />
-          <Route path="/signup" element={<SignupPage showToast={showToast} />} />
+              <Route element={<MainLayout onThemeChange={handleThemeChange} themeMode={themeMode} />}>
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/products" element={<ProductsPage />} />
+                  <Route path="/products/create" element={<CreateProductPage />} />
+                  <Route path="/products/:id" element={<ProductDetailPage />} />
+                  <Route path="/changes" element={<ChangesPage />} />
+                  <Route path="/changes/create" element={<CreateChangePage />} />
+                  <Route path="/changes/:id" element={<ChangeDetailPage />} />
+                  <Route path="/parts" element={<PartsPage />} />
+                  <Route path="/parts/create" element={<CreatePartPage />} />
+                  <Route path="/parts/:id" element={<PartDetailPage />} />
+                  <Route path="/documents" element={<DocumentsPage />} />
+                  <Route path="/admin/users" element={<UsersPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                </Route>
+              </Route>
 
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <HomePage
-                  showCreate={showCreate}
-                  setShowCreate={setShowCreate}
-                  editingPart={editingPart}
-                  setEditingPart={setEditingPart}
-                  reloadFlag={reloadFlag}
-                  setReloadFlag={setReloadFlag}
-                  showToast={showToast}
-                />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/parts/:id"
-            element={
-              <ProtectedRoute>
-                <PartDetails showToast={showToast} />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/admin/users"
-            element={
-              <ProtectedRoute requiredRoles={["ADMIN"]}>
-                <AdminUsersPage showToast={showToast} />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/documents"
-            element={
-              <ProtectedRoute>
-                <PlaceholderPage title="Documents" />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/changes"
-            element={
-              <ProtectedRoute>
-                <ChangesPage showToast={showToast} />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/changes/:id"
-            element={
-              <ProtectedRoute>
-                <ChangeDetailsPage showToast={showToast} />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Layout>
-    </BrowserRouter>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Router>
+        </NotificationProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
