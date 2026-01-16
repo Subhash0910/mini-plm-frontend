@@ -144,7 +144,7 @@ function BomStructureTab({ partId, showToast }) {
         }
         
         if (!line.quantity || line.quantity <= 0) {
-          showToast?.(`BOM line ${i + 1} must have a valid quantity (>0)", "error");
+          showToast?.(`BOM line ${i + 1} must have a valid quantity (>0)`, "error");
           return;
         }
       }
