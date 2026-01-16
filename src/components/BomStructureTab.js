@@ -26,7 +26,7 @@ function BomStructureTab({ partId, showToast }) {
   // - parentPartId (not partId)
   // - bomName (not name)
   // - bomLines (not lines)
-  // - componentPartId (not childPartId)
+  // - componentPartId (not childPartId, and must be actual part ID, not 0)
   // - lineNumber (required field)
   const editorTemplate = useMemo(() => {
     return {
@@ -36,7 +36,7 @@ function BomStructureTab({ partId, showToast }) {
       description: "",
       bomLines: [
         {
-          componentPartId: 0,
+          componentPartId: 0,  // User must change this to actual part ID!
           lineNumber: 1,
           quantity: 1,
           unitOfMeasure: "EA",
@@ -127,19 +127,24 @@ function BomStructureTab({ partId, showToast }) {
         return;
       }
 
-      // Validate each BOM line
+      // FIX: Validate each BOM line BEFORE sending to backend
+      // User must select actual part IDs, not leave them as 0
       for (let i = 0; i < payload.bomLines.length; i++) {
         const line = payload.bomLines[i];
-        if (!line.componentPartId || line.componentPartId === 0) {
-          showToast?.(`BOM line ${i + 1} must have a valid componentPartId`, "error");
+        
+        // Check if componentPartId is missing or is 0 (default/unselected value)
+        if (!line.componentPartId || line.componentPartId === 0 || line.componentPartId === "0") {
+          showToast?.(`BOM line ${i + 1} must have a valid componentPartId (select an actual part, not 0)`, "error");
           return;
         }
+        
         if (!line.lineNumber) {
           showToast?.(`BOM line ${i + 1} must have a lineNumber`, "error");
           return;
         }
+        
         if (!line.quantity || line.quantity <= 0) {
-          showToast?.(`BOM line ${i + 1} must have a valid quantity`, "error");
+          showToast?.(`BOM line ${i + 1} must have a valid quantity (>0)", "error");
           return;
         }
       }
